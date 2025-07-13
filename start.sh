@@ -98,10 +98,18 @@ echo "  • Запустить тесты: ${YELLOW}./vendor/bin/sail test${NC}"
 echo ""
 
 # Спрашиваем, хочет ли пользователь запустить dev server
-read -p "Хотите запустить Vite dev server для разработки? (y/n): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    print_message "Запускаем Vite dev server..."
-    print_warning "Для остановки нажмите Ctrl+C"
-    ./vendor/bin/sail npm run dev
-fi 
+while true; do
+    read -p "Хотите запустить Vite dev server для разработки? (y/n): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[YyДд]$ ]]; then
+        print_message "Запускаем Vite dev server..."
+        print_warning "Для остановки нажмите Ctrl+C"
+        ./vendor/bin/sail npm run dev
+        break
+    elif [[ $REPLY =~ ^[NnНн]$ ]]; then
+        print_message "Vite dev server не запущен. Для запуска используйте: ${YELLOW}./dev.sh${NC}"
+        break
+    else
+        print_error "Пожалуйста, введите 'y' для да или 'n' для нет"
+    fi
+done 

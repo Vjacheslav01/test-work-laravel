@@ -16,9 +16,8 @@
               </div>
             </div>
             <div class="flex items-center space-x-4">
-              <a href="https://laravel.com/docs" target="_blank" class="text-gray-600 hover:text-gray-900 transition-colors">Docs</a>
-              <a href="https://vuejs.org/" target="_blank" class="text-gray-600 hover:text-gray-900 transition-colors">Vue.js</a>
-              <a href="https://pinia.vuejs.org/" target="_blank" class="text-gray-600 hover:text-gray-900 transition-colors">Pinia</a>
+              <ButtonAuth @open-login="openLoginModal" />
+              <ButtonRegister @open-register="openRegisterModal" />
             </div>
           </div>
         </div>
@@ -55,9 +54,46 @@
         <div class="py-12 bg-white/50">
           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center">
+              <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+               Встречайте, готовое тестовое задание!
+              </p>
+            </div>
+
+            <div class="mt-10">
+              <div class="grid grid-cols-2 gap-8 md:grid-cols-6">
+                
+              </div>
+            </div>
+          </div>
+        </div>
+
+         <!-- Таблица с отсчетами -->
+         <div class="bg-gray-50 py-16">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+              <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+                Отсчеты по продажам
+              </h2>
+              <p class="mt-4 text-lg text-gray-600">
+                Отсчеты по продажам за последние 30 дней
+              </p>
+            </div>
+
+            <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+              <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Тут будет основа задачи -->
+        <div class="py-12 bg-white/50">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
               <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Технологии</h2>
               <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                Всё что нужно для современной разработки
+                Технологии, которые используются в тестовом задании
               </p>
             </div>
 
@@ -72,10 +108,7 @@
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Тут будет основа задачи -->
-    
+        </div>  
 
         <!-- Полезные ссылки -->
         <div class="bg-gray-50 py-16">
@@ -122,22 +155,79 @@
         </div>
       </footer>
     </div>
+
+    <!-- Модальные окна -->
+    <Suspense>
+      <template #default>
+        <LoginModal 
+          :isOpen="modals.login" 
+          @close="closeModals" 
+          @switch-to-register="switchToRegister"
+        />
+      </template>
+      <template #fallback>
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div class="text-white">Загрузка...</div>
+        </div>
+      </template>
+    </Suspense>
+
+    <Suspense>
+      <template #default>
+        <RegisterModal 
+          :isOpen="modals.register" 
+          @close="closeModals" 
+          @switch-to-login="switchToLogin"
+        />
+      </template>
+      <template #fallback>
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div class="text-white">Загрузка...</div>
+        </div>
+      </template>
+    </Suspense>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useCounterStore } from './stores/counter'
+import { ref, reactive, defineAsyncComponent } from 'vue'
+import ButtonAuth from './components/buttons/ButtonAuth.vue'
+import ButtonRegister from './components/buttons/ButtonRegister.vue'
 
-const counterStore = useCounterStore()
-const inputValue = ref('')
+// Асинхронная загрузка модалок
+const LoginModal = defineAsyncComponent(() => import('./components/modals/LoginModal.vue'))
+const RegisterModal = defineAsyncComponent(() => import('./components/modals/RegisterModal.vue'))
 
-const setCustomValue = () => {
-  const value = parseInt(inputValue.value)
-  if (!isNaN(value)) {
-    counterStore.setCount(value)
-    inputValue.value = ''
-  }
+// Состояние модалок
+const modals = reactive({
+  login: false,
+  register: false
+})
+
+// Методы для управления модалками
+const openLoginModal = () => {
+  closeModals()
+  modals.login = true
+}
+
+const openRegisterModal = () => {
+  closeModals()
+  modals.register = true
+}
+
+const closeModals = () => {
+  modals.login = false
+  modals.register = false
+}
+
+const switchToRegister = () => {
+  modals.login = false
+  modals.register = true
+}
+
+const switchToLogin = () => {
+  modals.register = false
+  modals.login = true
 }
 
 // Технологии
