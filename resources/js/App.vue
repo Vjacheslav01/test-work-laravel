@@ -50,7 +50,7 @@
           </div>
         </div>
 
-        <!-- Технологии -->
+        <!-- Тестовое задание -->
         <div class="py-12 bg-white/50">
           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center">
@@ -67,27 +67,10 @@
           </div>
         </div>
 
-         <!-- Таблица с отсчетами -->
-         <div class="bg-gray-50 py-16">
-          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-12">
-              <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                Отсчеты по продажам
-              </h2>
-              <p class="mt-4 text-lg text-gray-600">
-                Отсчеты по продажам за последние 30 дней
-              </p>
-            </div>
+        <!-- Отчет по продажам -->
+        <SalesReport />
 
-            <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Тут будет основа задачи -->
+        <!-- Технологии -->
         <div class="py-12 bg-white/50">
           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center">
@@ -193,6 +176,7 @@
 import { ref, reactive, defineAsyncComponent } from 'vue'
 import ButtonAuth from './components/buttons/ButtonAuth.vue'
 import ButtonRegister from './components/buttons/ButtonRegister.vue'
+import SalesReport from './components/SalesReport.vue'
 
 // Асинхронная загрузка модалок
 const LoginModal = defineAsyncComponent(() => import('./components/modals/LoginModal.vue'))
