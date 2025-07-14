@@ -100,6 +100,19 @@ services:
             - '/dev/shm:/dev/shm'
         networks:
             - sail
+    phpmyadmin:
+        container_name: sail-phpmyadmin
+        image: phpmyadmin/phpmyadmin
+        ports:
+            - '${FORWARD_PMA_PORT:-5000}:80'
+        environment:
+            - PMA_HOST=${DB_HOST}
+            - PMA_USER=${DB_USERNAME}
+            - PMA_PASSWORD=${DB_PASSWORD}
+        networks:
+            - sail
+        depends_on:
+            - mysql
 networks:
     sail:
         driver: bridge

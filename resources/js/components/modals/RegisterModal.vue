@@ -28,9 +28,13 @@
                 id="name"
                 type="text"
                 required
+                :class="{ 'border-red-500': form.errors.name }"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Введите ваше имя"
               />
+            </div>
+            <div v-if="form.errors.name" class="text-red-500 text-sm mt-1">
+                {{ form.errors.name[0] }}
             </div>
 
             <div>
@@ -42,11 +46,14 @@
                 id="email"
                 type="email"
                 required
+                :class="{ 'border-red-500': form.errors.email }"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Введите ваш email"
               />
             </div>
-
+            <div v-if="form.errors.email" class="text-red-500 text-sm mt-1">
+                {{ form.errors.email[0] }}
+            </div>
             <div>
               <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
                 Пароль
@@ -56,11 +63,14 @@
                 id="password"
                 type="password"
                 required
+                :class="{ 'border-red-500': form.errors.password }"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Введите пароль"
               />
             </div>
-
+            <div v-if="form.errors.password" class="text-red-500 text-sm mt-1">
+                {{ form.errors.password[0] }}
+            </div>
             <div>
               <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
                 Подтверждение пароля
@@ -70,9 +80,13 @@
                 id="password_confirmation"
                 type="password"
                 required
+                :class="{ 'border-red-500': form.errors.password_confirmation }"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="Подтвердите пароль"
               />
+            </div>
+            <div v-if="form.errors.password_confirmation" class="text-red-500 text-sm mt-1">
+                {{ form.errors.password_confirmation[0] }}
             </div>
 
             <div class="flex items-center">
@@ -121,6 +135,9 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { useUserStore } from '../../stores/user'
+
+const userStore = useUserStore()
 
 const props = defineProps({
   isOpen: {
@@ -138,7 +155,8 @@ const form = reactive({
   email: '',
   password: '',
   password_confirmation: '',
-  terms: false
+  terms: false,
+  errors: []
 })
 
 const closeModal = () => {
@@ -158,14 +176,15 @@ const handleRegister = async () => {
   isLoading.value = true
   
   try {
-    // Здесь будет логика регистрации
-    await new Promise(resolve => setTimeout(resolve, 1000)) // Имитация API запроса
-    
-    console.log('Регистрация:', form)
-    // После успешной регистрации закрываем модалку
-    closeModal()
-  } catch (error) {
-    console.error('Ошибка регистрации:', error)
+    const result = await userStore.register(form)
+
+    if (result.success) {
+      emit('register-success', result.user)
+      form.errors = []
+      closeModal()
+    } else {
+      form.errors = result.errors
+    }
   } finally {
     isLoading.value = false
   }

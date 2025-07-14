@@ -28,9 +28,13 @@
                 id="email"
                 type="email"
                 required
+                :class="{ 'border-red-500': form.errors.email }"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="Введите ваш email"
               />
+            </div>
+            <div v-if="form.errors.email" class="text-red-500 text-sm mt-1">
+              {{ form.errors.email[0] }}
             </div>
 
             <div>
@@ -42,9 +46,13 @@
                 id="password"
                 type="password"
                 required
+                :class="{ 'border-red-500': form.errors.password }"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 placeholder="Введите ваш пароль"
               />
+              <div v-if="form.errors.password" class="text-red-500 text-sm mt-1">
+                {{ form.errors.password[0] }}
+              </div>
             </div>
 
             <div class="flex items-center justify-between">
@@ -96,6 +104,9 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import { useUserStore } from '../../stores/user'
+
+const userStore = useUserStore()
 
 const props = defineProps({
   isOpen: {
@@ -111,7 +122,8 @@ const isLoading = ref(false)
 const form = reactive({
   email: '',
   password: '',
-  remember: false
+  remember: false,
+  errors: []
 })
 
 const closeModal = () => {
@@ -126,14 +138,14 @@ const handleLogin = async () => {
   isLoading.value = true
   
   try {
-    // Здесь будет логика авторизации
-    await new Promise(resolve => setTimeout(resolve, 1000)) // Имитация API запроса
-    
-    console.log('Авторизация:', form)
-    // После успешной авторизации закрываем модалку
-    closeModal()
-  } catch (error) {
-    console.error('Ошибка авторизации:', error)
+    const result = await userStore.login(form)
+    if (result.success) {
+      emit('login-success', result.user)
+      form.errors = []
+      closeModal()
+    } else {
+      form.errors = result.errors
+    }
   } finally {
     isLoading.value = false
   }

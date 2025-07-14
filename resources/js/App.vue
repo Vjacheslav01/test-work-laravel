@@ -16,8 +16,16 @@
               </div>
             </div>
             <div class="flex items-center space-x-4">
-              <ButtonAuth @open-login="openLoginModal" />
-              <ButtonRegister @open-register="openRegisterModal" />
+              <ButtonAuth v-if="!userStore.user" @open-login="openLoginModal" />
+              <ButtonRegister v-if="!userStore.user" @open-register="openRegisterModal" />
+
+              <span v-if="userStore.user" class="text-gray-700">
+                Привет, {{ userStore.user.name }}!
+              </span>
+
+              <button v-if="userStore.user" @click="handleLogout" class="bg-red-500 text-white px-4 py-2 rounded-lg cursor-pointer">
+                Выйти
+              </button>
             </div>
           </div>
         </div>
@@ -68,7 +76,21 @@
         </div>
 
         <!-- Отчет по продажам -->
-        <SalesReport />
+         <div v-if="userStore.user">
+            <SalesReport />
+         </div>
+         <div v-else>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 p-12">
+                <div class="text-center">
+                    <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+                        Для просмотра отчета по продажам, пожалуйста, авторизуйтесь
+                    </h2>
+                    <p class="mt-4 text-lg text-gray-600">
+                        Этот отчет содержит информацию о продажах за последние 30 дней
+                    </p>
+                </div>
+            </div>
+         </div>
 
         <!-- Технологии -->
         <div class="py-12 bg-white/50">
@@ -173,10 +195,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, defineAsyncComponent } from 'vue'
+import { ref, reactive, defineAsyncComponent, onMounted } from 'vue'
 import ButtonAuth from './components/buttons/ButtonAuth.vue'
 import ButtonRegister from './components/buttons/ButtonRegister.vue'
 import SalesReport from './components/SalesReport.vue'
+import { useUserStore } from './stores/user'
+
+const userStore = useUserStore()
 
 // Асинхронная загрузка модалок
 const LoginModal = defineAsyncComponent(() => import('./components/modals/LoginModal.vue'))
@@ -212,6 +237,11 @@ const switchToRegister = () => {
 const switchToLogin = () => {
   modals.register = false
   modals.login = true
+}
+
+const handleLogout = async () => {
+  await userStore.logout()
+  userStore.user = null
 }
 
 // Технологии
@@ -263,4 +293,8 @@ const links = ref([
     url: 'https://vitejs.dev/'
   }
 ])
+
+onMounted(() => {
+  userStore.fetchUser()
+})
 </script> 
