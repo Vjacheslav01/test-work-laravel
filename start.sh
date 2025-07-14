@@ -46,8 +46,148 @@ if ! docker info &> /dev/null; then
     exit 1
 fi
 
+# === ПЕРВОНАЧАЛЬНАЯ НАСТРОЙКА ПРОЕКТА ===
+print_message "Проверяем первоначальную настройку проекта..."
+
+# Проверка и создание .env файла
+if [ ! -f ".env" ]; then
+    if [ -f ".env.example" ]; then
+        print_message "Создаем .env файл из .env.example..."
+        cp .env.example .env
+        
+        print_message "Настраиваем переменные окружения для Docker..."
+        
+        # Настройка базы данных для MySQL
+        sed -i.bak 's/DB_CONNECTION=sqlite/DB_CONNECTION=mysql/' .env
+        
+        # Добавляем/обновляем переменные базы данных
+        if ! grep -q "^DB_HOST=" .env; then
+            echo "DB_HOST=mysql" >> .env
+        else
+            sed -i.bak 's/^# DB_HOST=.*/DB_HOST=mysql/' .env
+            sed -i.bak 's/^DB_HOST=.*/DB_HOST=mysql/' .env
+        fi
+        
+        if ! grep -q "^DB_PORT=" .env; then
+            echo "DB_PORT=3306" >> .env
+        else
+            sed -i.bak 's/^# DB_PORT=.*/DB_PORT=3306/' .env
+            sed -i.bak 's/^DB_PORT=.*/DB_PORT=3306/' .env
+        fi
+        
+        if ! grep -q "^DB_DATABASE=" .env; then
+            echo "DB_DATABASE=laravel" >> .env
+        else
+            sed -i.bak 's/^# DB_DATABASE=.*/DB_DATABASE=laravel/' .env
+            sed -i.bak 's/^DB_DATABASE=.*/DB_DATABASE=laravel/' .env
+        fi
+        
+        if ! grep -q "^DB_USERNAME=" .env; then
+            echo "DB_USERNAME=sail" >> .env
+        else
+            sed -i.bak 's/^# DB_USERNAME=.*/DB_USERNAME=sail/' .env
+            sed -i.bak 's/^DB_USERNAME=.*/DB_USERNAME=sail/' .env
+        fi
+        
+        if ! grep -q "^DB_PASSWORD=" .env; then
+            echo "DB_PASSWORD=password" >> .env
+        else
+            sed -i.bak 's/^# DB_PASSWORD=.*/DB_PASSWORD=password/' .env
+            sed -i.bak 's/^DB_PASSWORD=.*/DB_PASSWORD=password/' .env
+        fi
+        
+        # Добавляем переменные для Docker пользователей если их нет
+        if ! grep -q "^WWWUSER=" .env; then
+            echo "WWWUSER=$(id -u)" >> .env
+        fi
+        
+        if ! grep -q "^WWWGROUP=" .env; then
+            echo "WWWGROUP=$(id -g)" >> .env
+        fi
+        
+        # Удаляем backup файл
+        rm -f .env.bak
+        
+        print_message "✓ .env файл настроен для работы с Docker (MySQL, Sail)"
+    else
+        print_error ".env.example файл не найден! Невозможно создать .env"
+        exit 1
+    fi
+else
+    print_message "✓ .env файл уже существует"
+    
+    # Проверяем, настроен ли .env для Docker
+    if grep -q "DB_CONNECTION=sqlite" .env; then
+        print_warning "Обнаружена настройка SQLite. Обновляем для работы с Docker MySQL..."
+        
+        # Обновляем существующий .env для Docker
+        sed -i.bak 's/DB_CONNECTION=sqlite/DB_CONNECTION=mysql/' .env
+        
+        # Обновляем переменные базы данных
+        sed -i.bak 's/^# DB_HOST=.*/DB_HOST=mysql/' .env
+        sed -i.bak 's/^DB_HOST=.*/DB_HOST=mysql/' .env
+        sed -i.bak 's/^# DB_PORT=.*/DB_PORT=3306/' .env  
+        sed -i.bak 's/^DB_PORT=.*/DB_PORT=3306/' .env
+        sed -i.bak 's/^# DB_DATABASE=.*/DB_DATABASE=laravel/' .env
+        sed -i.bak 's/^DB_DATABASE=.*/DB_DATABASE=laravel/' .env
+        sed -i.bak 's/^# DB_USERNAME=.*/DB_USERNAME=sail/' .env
+        sed -i.bak 's/^DB_USERNAME=.*/DB_USERNAME=sail/' .env
+        sed -i.bak 's/^# DB_PASSWORD=.*/DB_PASSWORD=password/' .env
+        sed -i.bak 's/^DB_PASSWORD=.*/DB_PASSWORD=password/' .env
+        
+        # Добавляем переменные для Docker если их нет
+        if ! grep -q "^WWWUSER=" .env; then
+            echo "WWWUSER=$(id -u)" >> .env
+        fi
+        
+        if ! grep -q "^WWWGROUP=" .env; then
+            echo "WWWGROUP=$(id -g)" >> .env
+        fi
+        
+        rm -f .env.bak
+        print_message "✓ .env файл обновлен для работы с Docker"
+    fi
+fi
+
+# Проверка vendor директории и первоначальная установка зависимостей
+if [ ! -d "vendor" ] || [ ! -f "vendor/bin/sail" ]; then
+    print_warning "Папка vendor не найдена или неполная. Выполняем первоначальную установку..."
+    
+    # Проверяем, установлен ли Composer локально
+    if command -v composer &> /dev/null; then
+        print_message "Устанавливаем зависимости Composer локально..."
+        composer install --no-interaction
+    else
+        print_message "Composer не найден локально. Используем Docker для установки зависимостей..."
+        
+        # Используем Docker для установки composer зависимостей
+        if command -v docker &> /dev/null; then
+            docker run --rm -v "$(pwd)":/app -w /app composer:latest composer install --no-interaction --ignore-platform-reqs
+        else
+            print_error "Ни Composer, ни Docker не доступны для установки зависимостей!"
+            print_error "Установите Composer локально или убедитесь, что Docker работает."
+            exit 1
+        fi
+    fi
+    
+    # Проверяем, что sail теперь доступен
+    if [ ! -f "vendor/bin/sail" ]; then
+        print_error "Laravel Sail не установлен! Проверьте установку зависимостей."
+        exit 1
+    fi
+else
+    print_message "✓ Зависимости Composer уже установлены"
+fi
+
+# Проверка node_modules (для информации)
+if [ ! -d "node_modules" ]; then
+    print_warning "Node.js зависимости будут установлены позже через Sail"
+else
+    print_message "✓ Node.js зависимости найдены"
+fi
+
 print_message "Останавливаем предыдущие контейнеры (если они запущены)..."
-./vendor/bin/sail down
+./vendor/bin/sail down -v
 
 print_message "Запускаем Laravel Sail..."
 ./vendor/bin/sail up -d
@@ -79,7 +219,7 @@ while true; do
         ./vendor/bin/sail artisan db:seed --class=ProductsSeeder
         break
     elif [[ $REPLY =~ ^[NnНн]$ ]]; then
-        print_message "Тестовые данные не заполнены. Для заполнения используйте: ${YELLOW}./dev.sh${NC}"
+        print_message "Тестовые данные не заполнены."
         break
     else
         print_error "Пожалуйста, введите 'y' для да или 'n' для нет"
