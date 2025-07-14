@@ -23,7 +23,7 @@ Laravel is accessible, powerful, and provides tools required for large, robust a
 
 ## Installation 
 
-For details, see README-SCRIPT.md
+For details, see [README-SCRIPT.md](https://github.com/Vjacheslav01/test-work-laravel/blob/main/README-SCRIPTS.md)
 
 ## Learning Laravel
 
