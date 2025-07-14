@@ -51,13 +51,13 @@
         <div class="mt-4 flex justify-end">
           <button
             @click="salesStore.resetFilters"
-            class="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+            class="mr-3 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
           >
             Сбросить
           </button>
           <button
             @click="applyFilters"
-            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer"
           >
             Применить
           </button>
@@ -73,7 +73,7 @@
           </div>
           <button
             @click="downloadTemplate"
-            class="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+            class="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors cursor-pointer"
           >
             📥 Скачать шаблон
           </button>
