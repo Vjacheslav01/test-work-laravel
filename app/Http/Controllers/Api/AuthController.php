@@ -54,7 +54,8 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        Auth::login($user);
+        Auth::login($user, true);
+        $request->session()->regenerate();
 
         return response()->json([
             'success' => true,
