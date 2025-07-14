@@ -66,71 +66,99 @@
 
       <!-- Таблица -->
       <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
-        <div class="px-6 py-4 border-b border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h3 class="text-lg font-semibold text-gray-900">Данные о продажах</h3>
+          <!-- Индикатор загрузки пагинации -->
+          <div v-if="salesStore.paginationLoading" class="flex items-center text-indigo-600">
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600 mr-2"></div>
+            <span class="text-sm">Загрузка...</span>
+          </div>
         </div>
         
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Товар
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Категория
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Количество
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Цена
-                </th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Дата продажи
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="sale in salesStore.paginatedSales" :key="sale.id" class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {{ sale.product_name }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                        :class="salesStore.getCategoryColor(sale.category)">
-                    {{ sale.category }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ sale.quantity }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ salesStore.formatCurrency(sale.price * sale.quantity) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ salesStore.formatDate(sale.sale_date) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Состояние загрузки (только для первичной загрузки) -->
+        <div v-if="salesStore.loading" class="flex justify-center items-center py-12">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <span class="ml-2 text-gray-600">Загрузка...</span>
+        </div>
+
+        <!-- Ошибка -->
+        <div v-else-if="salesStore.error" class="p-6 text-center">
+          <div class="text-red-600 mb-2">Ошибка загрузки данных</div>
+          <button 
+            @click="salesStore.fetchSalesData()"
+            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+            Повторить
+          </button>
+        </div>
+
+        <!-- Данные -->
+        <div v-else class="overflow-x-auto">
+          <!-- Добавляем прозрачность при загрузке пагинации -->
+          <div :class="{ 'opacity-60 pointer-events-none': salesStore.paginationLoading }" 
+               class="transition-opacity duration-300">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Товар
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Категория
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Количество
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Цена
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Дата продажи
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr v-for="sale in salesStore.salesData" :key="sale.id" class="hover:bg-gray-50 transition-colors">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {{ sale.product_name }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                          :class="salesStore.getCategoryColor(sale.category)">
+                      {{ sale.category }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ sale.quantity }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ salesStore.formatCurrency(sale.price * sale.quantity) }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ salesStore.formatDate(sale.sale_date) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Пагинация -->
-        <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+        <div v-if="!salesStore.loading && !salesStore.error && salesStore.paginationData.total > 0" 
+             class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
           <div class="flex items-center justify-between">
             <div class="flex-1 flex justify-between sm:hidden">
               <button
                 @click="salesStore.prevPage"
-                :disabled="salesStore.currentPage === 1"
-                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                :disabled="salesStore.currentPage === 1 || salesStore.paginationLoading"
+                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 Назад
               </button>
               <button
                 @click="salesStore.nextPage"
-                :disabled="salesStore.currentPage === salesStore.totalPages"
-                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                :disabled="salesStore.currentPage === salesStore.totalPages || salesStore.paginationLoading"
+                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 Вперед
               </button>
@@ -140,15 +168,15 @@
                 <p class="text-sm text-gray-700">
                   Показано <span class="font-medium">{{ salesStore.startIndex }}</span> - 
                   <span class="font-medium">{{ salesStore.endIndex }}</span> из 
-                  <span class="font-medium">{{ salesStore.filteredSales.length }}</span> записей
+                  <span class="font-medium">{{ salesStore.paginationData.total }}</span> записей
                 </p>
               </div>
               <div>
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                   <button
                     @click="salesStore.prevPage"
-                    :disabled="salesStore.currentPage === 1"
-                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    :disabled="salesStore.currentPage === 1 || salesStore.paginationLoading"
+                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     ←
                   </button>
@@ -156,8 +184,9 @@
                     v-for="page in salesStore.visiblePages"
                     :key="page"
                     @click="salesStore.setCurrentPage(page)"
+                    :disabled="salesStore.paginationLoading"
                     :class="[
-                      'relative inline-flex items-center px-4 py-2 border text-sm font-medium',
+                      'relative inline-flex items-center px-4 py-2 border text-sm font-medium disabled:cursor-not-allowed transition-all duration-200',
                       page === salesStore.currentPage
                         ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
                         : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
@@ -167,8 +196,8 @@
                   </button>
                   <button
                     @click="salesStore.nextPage"
-                    :disabled="salesStore.currentPage === salesStore.totalPages"
-                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    :disabled="salesStore.currentPage === salesStore.totalPages || salesStore.paginationLoading"
+                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     →
                   </button>
@@ -253,19 +282,24 @@ const updateChart = () => {
   })
 }
 
-const applyFilters = () => {
-  // Фильтры применяются автоматически через реактивность
+const applyFilters = async () => {
+  await salesStore.setFilters(salesStore.filters)
+  await salesStore.fetchChartData()
   updateChart()
 }
 
-// Следим за изменениями фильтрованных данных
-watch(() => salesStore.filteredSales, () => {
-  updateChart()
-}, { deep: true })
+// Следим за изменениями данных графика
+watch(
+  () => salesStore.chartData, () => {
+    updateChart()
+  },
+  { deep: true }
+)
 
 // Загружаем данные при монтировании компонента
 onMounted(async () => {
   await salesStore.fetchSalesData()
+  await salesStore.fetchChartData()
   nextTick(() => {
     updateChart()
   })

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\SalesController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,7 @@ Route::get('/sanctum/csrf-cookie', function (Request $request) {
 
 // Все маршруты для SPA используют web middleware
 Route::middleware(['web'])->group(function () {
+    
     // Публичные маршруты аутентификации
     Route::prefix('auth')->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
@@ -29,9 +31,18 @@ Route::middleware(['web'])->group(function () {
 
     // Защищенные маршруты
     Route::middleware(['auth:sanctum'])->group(function () {
+        
+        // Маршруты аутентификации
         Route::prefix('auth')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
             Route::get('/user', [AuthController::class, 'user']);
+        });
+
+        // API для работы с продажами
+        Route::prefix('sales')->group(function () {
+            Route::get('/', [SalesController::class, 'index']);
+            Route::get('/chart', [SalesController::class, 'getChartData']);
+            Route::get('/categories', [SalesController::class, 'getCategories']);
         });
     });
 }); 

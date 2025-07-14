@@ -26,6 +26,18 @@ class Products extends Model
     protected $fillable = ['name', 'description', 'price', 'category_id'];
 
     /**
+     * Приведение типов
+     *
+     * @var array
+     */
+    protected $casts = [
+        'price' => 'decimal:2',
+        'category_id' => 'integer',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /**
      * Связь с таблицей продаж.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
@@ -48,7 +60,7 @@ class Products extends Model
     /**
      * Получить отчет о продажах для продукта.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getSalesReport()
     {

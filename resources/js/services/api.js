@@ -44,6 +44,28 @@ const api = {
   async checkAuth() {
     const response = await axios.get('/api/check-auth')
     return response.data
+  },
+
+  // Получение данных о продажах
+  async getSalesData(page = 1, filters = {}) {
+    const params = {
+      page,
+      per_page: 10,
+      ...filters
+    }
+    
+    const response = await axios.get('/api/sales', { params })
+      .then(response => response.data)
+      .catch(error => error.response?.data || { status: error.response?.status })
+    return response
+  },
+
+  // Получение данных для графика
+  async getChartData(filters = {}) {
+    const response = await axios.get('/api/sales/chart', { params: filters })
+      .then(response => response.data)
+      .catch(error => error.response?.data || { status: error.response?.status })
+    return response
   }
 }
 

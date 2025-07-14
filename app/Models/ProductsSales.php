@@ -25,6 +25,18 @@ class ProductsSales extends Model
     protected $fillable = ['product_id', 'quantity', 'price'];
 
     /**
+     * Приведение типов
+     *
+     * @var array
+     */
+    protected $casts = [
+        'quantity' => 'integer',
+        'price' => 'decimal:2',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /**
      * Связь с таблицей продуктов.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

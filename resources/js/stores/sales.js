@@ -1,30 +1,23 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import api from '../services/api'
 
 export const useSalesStore = defineStore('sales', () => {
   // Состояние
-  const salesData = ref([
-    { id: 1, product_name: 'iPhone 14', category: 'Электроника', quantity: 2, price: 65000, sale_date: '2024-01-15' },
-    { id: 2, product_name: 'Samsung Galaxy S23', category: 'Электроника', quantity: 1, price: 55000, sale_date: '2024-01-14' },
-    { id: 3, product_name: 'Nike Air Force', category: 'Одежда', quantity: 3, price: 8500, sale_date: '2024-01-13' },
-    { id: 4, product_name: 'MacBook Pro', category: 'Электроника', quantity: 1, price: 120000, sale_date: '2024-01-12' },
-    { id: 5, product_name: 'Adidas Ultraboost', category: 'Одежда', quantity: 2, price: 12000, sale_date: '2024-01-11' },
-    { id: 6, product_name: 'Sony WH-1000XM4', category: 'Электроника', quantity: 4, price: 25000, sale_date: '2024-01-10' },
-    { id: 7, product_name: 'Levi\'s 501', category: 'Одежда', quantity: 5, price: 4500, sale_date: '2024-01-09' },
-    { id: 8, product_name: 'iPad Pro', category: 'Электроника', quantity: 2, price: 75000, sale_date: '2024-01-08' },
-    { id: 9, product_name: 'Зеркальная камера Canon', category: 'Электроника', quantity: 1, price: 45000, sale_date: '2024-01-07' },
-    { id: 10, product_name: 'Куртка зимняя', category: 'Одежда', quantity: 3, price: 6500, sale_date: '2024-01-06' },
-    { id: 11, product_name: 'Кроссовки New Balance', category: 'Одежда', quantity: 2, price: 9500, sale_date: '2024-01-05' },
-    { id: 12, product_name: 'Умные часы Apple Watch', category: 'Электроника', quantity: 3, price: 32000, sale_date: '2024-01-04' },
-    { id: 13, product_name: 'Джинсы Diesel', category: 'Одежда', quantity: 1, price: 8000, sale_date: '2024-01-03' },
-    { id: 14, product_name: 'Наушники AirPods Pro', category: 'Электроника', quantity: 5, price: 18000, sale_date: '2024-01-02' },
-    { id: 15, product_name: 'Свитер Zara', category: 'Одежда', quantity: 4, price: 3500, sale_date: '2024-01-01' },
-    { id: 16, product_name: 'PlayStation 5', category: 'Электроника', quantity: 1, price: 45000, sale_date: '2024-01-16' },
-    { id: 17, product_name: 'Кроссовки Puma', category: 'Одежда', quantity: 2, price: 7500, sale_date: '2024-01-17' },
-    { id: 18, product_name: 'Xiaomi Mi 11', category: 'Электроника', quantity: 3, price: 35000, sale_date: '2024-01-18' },
-    { id: 19, product_name: 'Рубашка Hugo Boss', category: 'Одежда', quantity: 1, price: 12000, sale_date: '2024-01-19' },
-    { id: 20, product_name: 'Наушники Bose', category: 'Электроника', quantity: 2, price: 28000, sale_date: '2024-01-20' },
-  ])
+  const salesData = ref([])
+  const loading = ref(false)
+  const paginationLoading = ref(false) // Отдельный loader для пагинации
+  const error = ref(null)
+
+  // Данные пагинации (приходят с сервера)
+  const paginationData = ref({
+    current_page: 1,
+    from: 0,
+    last_page: 1,
+    per_page: 10,
+    to: 0,
+    total: 0
+  })
 
   // Фильтры
   const filters = ref({
@@ -33,44 +26,21 @@ export const useSalesStore = defineStore('sales', () => {
     category: ''
   })
 
-  // Пагинация
-  const currentPage = ref(1)
-  const itemsPerPage = ref(10)
+  // Данные для графика
+  const chartData = ref({
+    labels: [],
+    data: []
+  })
 
   // Геттеры
   const categories = computed(() => {
     return [...new Set(salesData.value.map(sale => sale.category))]
   })
 
-  const filteredSales = computed(() => {
-    let filtered = salesData.value
-
-    if (filters.value.dateFrom) {
-      filtered = filtered.filter(sale => sale.sale_date >= filters.value.dateFrom)
-    }
-
-    if (filters.value.dateTo) {
-      filtered = filtered.filter(sale => sale.sale_date <= filters.value.dateTo)
-    }
-
-    if (filters.value.category) {
-      filtered = filtered.filter(sale => sale.category === filters.value.category)
-    }
-
-    return filtered
-  })
-
-  const paginatedSales = computed(() => {
-    const start = (currentPage.value - 1) * itemsPerPage.value
-    const end = start + itemsPerPage.value
-    return filteredSales.value.slice(start, end)
-  })
-
-  const totalPages = computed(() => Math.ceil(filteredSales.value.length / itemsPerPage.value))
-
-  const startIndex = computed(() => (currentPage.value - 1) * itemsPerPage.value + 1)
-
-  const endIndex = computed(() => Math.min(currentPage.value * itemsPerPage.value, filteredSales.value.length))
+  const startIndex = computed(() => paginationData.value.from || 0)
+  const endIndex = computed(() => paginationData.value.to || 0)
+  const totalPages = computed(() => paginationData.value.last_page || 1)
+  const currentPage = computed(() => paginationData.value.current_page || 1)
 
   const visiblePages = computed(() => {
     const pages = []
@@ -89,54 +59,36 @@ export const useSalesStore = defineStore('sales', () => {
     return pages
   })
 
-  // Данные для графика
-  const chartData = computed(() => {
-    const salesByDate = filteredSales.value.reduce((acc, sale) => {
-      const date = sale.sale_date
-      if (!acc[date]) {
-        acc[date] = 0
-      }
-      acc[date] += sale.quantity * sale.price
-      return acc
-    }, {})
-
-    const sortedDates = Object.keys(salesByDate).sort()
-    return {
-      labels: sortedDates.map(date => formatDate(date)),
-      data: sortedDates.map(date => salesByDate[date])
-    }
-  })
-
   // Экшены
-  const setFilters = (newFilters) => {
+  const setFilters = async (newFilters) => {
     Object.assign(filters.value, newFilters)
-    currentPage.value = 1
+    await fetchSalesData(1, true) // При изменении фильтров это первичная загрузка
   }
 
-  const resetFilters = () => {
+  const resetFilters = async () => {
     filters.value = {
       dateFrom: '',
       dateTo: '',
       category: ''
     }
-    currentPage.value = 1
+    await fetchSalesData(1, true) // При сбросе фильтров это первичная загрузка
   }
 
-  const setCurrentPage = (page) => {
-    if (page >= 1 && page <= totalPages.value) {
-      currentPage.value = page
+  const setCurrentPage = async (page) => {
+    if (page >= 1 && page <= totalPages.value && !paginationLoading.value) {
+      await fetchSalesData(page, false) // false = не первичная загрузка
     }
   }
 
-  const nextPage = () => {
-    if (currentPage.value < totalPages.value) {
-      currentPage.value++
+  const nextPage = async () => {
+    if (currentPage.value < totalPages.value && !paginationLoading.value) {
+      await fetchSalesData(currentPage.value + 1, false)
     }
   }
 
-  const prevPage = () => {
-    if (currentPage.value > 1) {
-      currentPage.value--
+  const prevPage = async () => {
+    if (currentPage.value > 1 && !paginationLoading.value) {
+      await fetchSalesData(currentPage.value - 1, false)
     }
   }
 
@@ -162,29 +114,89 @@ export const useSalesStore = defineStore('sales', () => {
     return colors[category] || 'bg-gray-100 text-gray-800'
   }
 
-  // API для загрузки данных (заглушка)
-  const fetchSalesData = async () => {
-    // Здесь будет API запрос
-    // const response = await fetch('/api/sales')
-    // salesData.value = await response.json()
+  // API для загрузки данных
+  const fetchSalesData = async (page = 1, isInitialFetch = true) => {
+    // Используем разные loaders в зависимости от типа загрузки
+    if (isInitialFetch) {
+      loading.value = true
+    } else {
+      paginationLoading.value = true
+    }
+    error.value = null
+    
+    try {
+      const response = await api.getSalesData(page, filters.value)
+
+      if (response.status === 401) {
+        error.value = 'Unauthorized'
+        return
+      }
+
+      if (response.data) {
+        salesData.value = response.data
+        // Обновляем данные пагинации
+        paginationData.value = {
+          current_page: response.meta.current_page,
+          from: response.meta.from,
+          last_page: response.meta.last_page,
+          per_page: response.meta.per_page,
+          to: response.meta.to,
+          total: response.meta.total
+        }
+      }
+    } catch (err) {
+      error.value = err.message || 'Ошибка загрузки данных'
+      console.error('Ошибка загрузки продаж:', err)
+    } finally {
+      if (isInitialFetch) {
+        loading.value = false
+      } else {
+        paginationLoading.value = false
+      }
+    }
+  }
+  
+  // API для загрузки данных для графика
+  const fetchChartData = async () => {
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await api.getChartData(filters.value)
+
+      if (response.status === 401) {
+        error.value = 'Unauthorized'
+        return
+      }
+
+      if (response.chartData) {
+        chartData.value = response.chartData
+      }
+    } catch (err) {
+      error.value = err.message || 'Ошибка загрузки данных графика'
+      console.error('Ошибка загрузки данных графика:', err)
+    } finally {
+      loading.value = false
+    }
   }
 
   return {
     // Состояние
     salesData,
+    loading,
+    paginationLoading,
+    error,
     filters,
-    currentPage,
-    itemsPerPage,
+    paginationData,
+    chartData,
     
     // Геттеры
     categories,
-    filteredSales,
-    paginatedSales,
-    totalPages,
     startIndex,
     endIndex,
+    totalPages,
+    currentPage,
     visiblePages,
-    chartData,
     
     // Экшены
     setFilters,
@@ -193,6 +205,7 @@ export const useSalesStore = defineStore('sales', () => {
     nextPage,
     prevPage,
     fetchSalesData,
+    fetchChartData,
     
     // Вспомогательные функции
     formatDate,

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\SalesService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +12,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Регистрируем сервисы для dependency injection
+        $this->app->singleton(SalesService::class, function ($app) {
+            return new SalesService();
+        });
     }
 
     /**

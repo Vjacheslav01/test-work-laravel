@@ -61,6 +61,7 @@
                   v-model="form.remember"
                   id="remember"
                   type="checkbox"
+                  value="true"
                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                 />
                 <label for="remember" class="ml-2 block text-sm text-gray-700">
@@ -122,7 +123,7 @@ const isLoading = ref(false)
 const form = reactive({
   email: '',
   password: '',
-  remember: false,
+  remember: true,
   errors: []
 })
 
