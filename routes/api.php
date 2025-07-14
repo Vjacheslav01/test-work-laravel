@@ -43,6 +43,11 @@ Route::middleware(['web'])->group(function () {
             Route::get('/', [SalesController::class, 'index']);
             Route::get('/chart', [SalesController::class, 'getChartData']);
             Route::get('/categories', [SalesController::class, 'getCategories']);
+            
+            // Excel импорт
+            Route::post('/import', [SalesController::class, 'importExcel']);
+            Route::post('/validate-excel', [SalesController::class, 'validateExcel']);
+            Route::get('/template', [SalesController::class, 'downloadTemplate']);
         });
     });
 }); 

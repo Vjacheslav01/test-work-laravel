@@ -66,6 +66,67 @@ const api = {
       .then(response => response.data)
       .catch(error => error.response?.data || { status: error.response?.status })
     return response
+  },
+
+  // Импорт Excel файла с продажами
+  async importExcelFile(file, onUploadProgress = null) {
+    await this.getCsrfToken()
+    
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const config = {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    }
+
+    if (onUploadProgress) {
+      config.onUploadProgress = onUploadProgress
+    }
+
+    const response = await axios.post('/api/sales/import', formData, config)
+      .then(response => response.data)
+      .catch(error => error.response?.data || { success: false, message: 'Ошибка сети' })
+    
+    return response
+  },
+
+  // Валидация Excel файла
+  async validateExcelFile(file) {
+    await this.getCsrfToken()
+    
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await axios.post('/api/sales/validate-excel', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    })
+      .then(response => response.data)
+      .catch(error => error.response?.data || { success: false, message: 'Ошибка сети' })
+    
+    return response
+  },
+
+  // Скачивание шаблона Excel
+  async downloadExcelTemplate() {
+    const response = await axios.get('/api/sales/template', {
+      responseType: 'blob'
+    })
+    
+    // Создаем ссылку для скачивания
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'sales_import_template.xlsx')
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+    
+    return { success: true, message: 'Шаблон загружен' }
   }
 }
 
