@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ExcelImportRequest;
 use App\Http\Requests\SalesFilterRequest;
 use App\Http\Resources\SaleResource;
+use App\Services\ExcelImportService;
 use App\Services\SalesService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -17,7 +19,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 class SalesController extends Controller
 {
     public function __construct(
-        private readonly SalesService $salesService
+        private readonly SalesService $salesService,
+        private readonly ExcelImportService $excelImportService
     ) {}
 
     /**
@@ -109,6 +112,102 @@ class SalesController extends Controller
                 'success' => false,
                 'error' => 'Ошибка получения категорий',
                 'message' => app()->isProduction() ? 'Внутренняя ошибка сервера' : $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Импорт продаж из Excel файла
+     *
+     * @param ExcelImportRequest $request
+     * @return JsonResponse
+     */
+    public function importExcel(ExcelImportRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->excelImportService->importSalesFile($request->file('file'));
+            
+            $status = $result['success'] ? 200 : 422;
+            
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'stats' => $result['stats'] ?? null,
+                'errors' => $result['stats']['errors'] ?? []
+            ], $status);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error importing Excel file', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'file_name' => $request->file('file')->getClientOriginalName()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => app()->isProduction() 
+                    ? 'Ошибка при импорте файла' 
+                    : 'Ошибка при импорте файла: ' . $e->getMessage(),
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Скачивание шаблона Excel файла
+     *
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse|JsonResponse
+     */
+    public function downloadTemplate()
+    {
+        try {
+            $filePath = $this->excelImportService->generateTemplate();
+            
+            return response()->download($filePath, 'sales_import_template.xlsx')->deleteFileAfterSend();
+            
+        } catch (\Exception $e) {
+            \Log::error('Error generating Excel template', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при создании шаблона',
+                'error' => app()->isProduction() ? 'Внутренняя ошибка сервера' : $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Валидация структуры Excel файла
+     *
+     * @param ExcelImportRequest $request
+     * @return JsonResponse
+     */
+    public function validateExcel(ExcelImportRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->excelImportService->validateFileStructure($request->file('file'));
+            
+            return response()->json([
+                'success' => $result['valid'],
+                'message' => $result['message'],
+                'missing_headers' => $result['missing_headers'] ?? [],
+                'expected_headers' => $result['expected_headers'] ?? []
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error validating Excel file', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'file_name' => $request->file('file')->getClientOriginalName()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при валидации файла: ' . $e->getMessage(),
+                'error' => $e->getMessage()
             ], 500);
         }
     }

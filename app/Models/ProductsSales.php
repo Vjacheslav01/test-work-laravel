@@ -22,7 +22,7 @@ class ProductsSales extends Model
      *
      * @var list<string>
      */
-    protected $fillable = ['product_id', 'quantity', 'price'];
+    protected $fillable = ['product_id', 'quantity', 'price', 'created_at'];
 
     /**
      * Приведение типов
